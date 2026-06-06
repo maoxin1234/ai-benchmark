@@ -1,0 +1,106 @@
+schema_version: 2
+id: p003
+title: "Runelet 表达式求值器"
+category: compilers_interpreters
+difficulty: hard
+weight: 3
+runtime_limit_s: 10
+
+anti_memorization: |
+  Runelet 是虚构语言。interleave/times 运算符语义为专有定义，
+  不同于任何标准库函数；let-in 的作用域遮蔽规则需从规格推导。
+  题目故意不提供 BNF，迫使 AI 从语言描述中自行归纳优先级。
+
+prompt: |
+  ## 任务
+
+  实现 Runelet 表达式求值器。从标准输入读取表达式，每行一个，
+  按顺序输出每行的求值结果。
+
+  ## 数据类型
+
+  - 整数（Python int 范围）
+  - 字符串（双引号包裹，内容不含换行）
+  - 布尔值（仅由比较运算产生）
+
+  ## 运算
+
+  **算术**（仅对整数，左结合）
+  ```
+  优先级高：  expr * expr   expr / expr（向下整除）   expr % expr
+  优先级低：  expr + expr   expr - expr
+  ```
+
+  **比较**（优先级低于算术，返回布尔值）
+  ```
+  expr == expr   expr != expr
+  expr <  expr   expr >  expr
+  expr <= expr   expr >= expr
+  ```
+
+  **字符串函数**
+  ```
+  interleave(s1, s2)
+    交替取 s1 和 s2 的字符，较长串的剩余部分追加到末尾
+    例：interleave("abc", "12345") → "a1b2c345"
+
+  times(s, n)
+    将字符串 s 重复 n 次；n=0 返回空串
+    例：times("go", 3) → "gogogo"
+  ```
+
+  **let 绑定**（词法作用域，内层遮蔽外层同名变量）
+  ```
+  let x = expr in body
+  ```
+
+  **条件表达式**
+  ```
+  if cond then t else f
+  ```
+
+  **括号**：`(expr)` 覆盖默认优先级
+
+  **变量**：字母或下划线开头的标识符
+
+  ## 输出规则
+
+  - 整数 → 数字本身
+  - 字符串 → 内容（不含引号）
+  - 布尔值 → `true` 或 `false`
+  - 语法或类型错误 → `ERROR`（包括除以零、未定义变量、类型不匹配）
+
+public_cases:
+  - name: "基础算术"
+    input: |
+      42
+      3 + 4 * 2
+      10 / 3
+      10 % 3
+    expected: |
+      42
+      11
+      3
+      1
+
+  - name: "字符串函数"
+    input: |
+      interleave("abc", "12345")
+      times("go", 3)
+      interleave("", "hello")
+    expected: |
+      a1b2c345
+      gogogo
+      hello
+
+  - name: "let 绑定与条件"
+    input: |
+      let x = 10 in x * x - 1
+      let a = 3 in let b = 4 in a * a + b * b
+      if 10 % 3 == 1 then "yes" else "no"
+      if 5 > 10 then 1 else 2
+    expected: |
+      99
+      25
+      yes
+      2

@@ -1,0 +1,46 @@
+# 私有判分用例 —— 不随 problems/ 公开题库发布。
+id: p002
+hidden_cases:
+  - name: "无载荷条目"
+    input: |
+      [200|INFO|sys|Startup]
+      [201|ERROR|sys|Crash]
+      QUERY COUNT module=sys
+      QUERY KEYS module=sys
+      QUERY LATEST level=ERROR
+    expected: "2\n\n201"
+
+  - name: "查询无匹配"
+    input: |
+      [300|INFO|app|Boot{v=1}]
+      QUERY COUNT level=ERROR
+      QUERY LATEST module=missing
+      QUERY SUM key=duration module=app
+    expected: |
+      0
+      -1
+      0
+
+  - name: "增量查询（查询出现在日志中间）"
+    input: |
+      [400|INFO|svc|A{x=1}]
+      [401|INFO|svc|B{x=2}]
+      QUERY COUNT module=svc
+      [402|INFO|svc|C{x=3}]
+      QUERY COUNT module=svc
+      QUERY SUM key=x module=svc
+    expected: |
+      2
+      3
+      6
+
+  - name: "时间戳无序"
+    input: |
+      [500|ERROR|app|E1{n=1}]
+      [300|ERROR|app|E2{n=2}]
+      [700|ERROR|app|E3{n=3}]
+      QUERY LATEST level=ERROR
+      QUERY SUM key=n level=ERROR
+    expected: |
+      700
+      6

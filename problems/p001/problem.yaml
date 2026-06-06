@@ -1,0 +1,116 @@
+schema_version: 2
+id: p001
+title: "Pixie VM 解释器"
+category: systems_programming
+difficulty: medium
+weight: 2          # 难度权重，用于加权总分
+runtime_limit_s: 10
+
+anti_memorization: |
+  SHUF 和 SCAN 是 Pixie VM 专有指令，语义完整定义于本题。
+  熟悉 VM 实现的 AI 也必须阅读规格才能正确处理这两条指令。
+
+prompt: |
+  ## 任务
+
+  实现 Pixie VM 解释器。从标准输入读取汇编程序，执行后输出寄存器状态。
+
+  ## 虚拟机规格
+
+  **寄存器**
+  - 通用寄存器：r0 ~ r7，初始值均为 0
+  - 比较标志 FLAG（不可直接访问）：-1=小于，0=等于，1=大于
+
+  **内存**
+  - 256 个整数单元，地址 0~255，初始值为 0
+
+  **指令集**
+
+  ```
+  SET  rx val     -- rx = val（整数字面量）
+  MOV  rx ry      -- rx = ry
+  ADD  rx ry      -- rx = rx + ry
+  SUB  rx ry      -- rx = rx - ry
+  MUL  rx ry      -- rx = rx * ry
+  DIV  rx ry      -- rx = rx // ry（向下整除）
+  MOD  rx ry      -- rx = rx % ry
+  SHUF rx ry rz   -- rx = (ry * rz) XOR (ry + rz)
+  CMP  rx ry      -- 比较 rx 与 ry，设置 FLAG
+  JMP  label      -- 无条件跳转
+  JEQ  label      -- FLAG == 0 时跳转
+  JNE  label      -- FLAG != 0 时跳转
+  JLT  label      -- FLAG == -1 时跳转（rx < ry）
+  JGT  label      -- FLAG == 1 时跳转（rx > ry）
+  STORE rx ry     -- MEM[ry] = rx
+  LOAD  rx ry     -- rx = MEM[ry]
+  SCAN  rx ry rz  -- 在 MEM[ry..rz]（含两端）中找第一个非零值的地址存入 rx；找不到则 rx = -1
+  HALT            -- 停止执行
+  ```
+
+  **标签**：`LABELNAME:` 单独一行（末尾加冒号），供跳转指令引用。
+
+  空行和注释行（`--` 开头）忽略。
+
+  ## 输出格式
+
+  HALT 时输出 r0 ~ r7 的值，共 8 行，格式：`ri=value`
+
+  若执行超过 10000 条指令仍未 HALT，输出一行 `TIMEOUT`
+
+# 仅公开样例。隐藏判分用例见 private-tests/p001/tests.yaml（不随题库发布）
+public_cases:
+  - name: "基础 SHUF"
+    input: |
+      SET r0 10
+      SET r1 3
+      SHUF r2 r0 r1
+      HALT
+    expected: |
+      r0=10
+      r1=3
+      r2=19
+      r3=0
+      r4=0
+      r5=0
+      r6=0
+      r7=0
+
+  - name: "跳转循环"
+    input: |
+      SET r0 1
+      SET r1 0
+      SET r2 5
+      LOOP:
+      ADD r1 r0
+      ADD r0 r0
+      CMP r0 r2
+      JLT LOOP
+      HALT
+    expected: |
+      r0=8
+      r1=7
+      r2=5
+      r3=0
+      r4=0
+      r5=0
+      r6=0
+      r7=0
+
+  - name: "内存 SCAN"
+    input: |
+      SET r0 99
+      SET r1 5
+      SET r2 0
+      SET r3 9
+      STORE r0 r1
+      SCAN r4 r2 r3
+      HALT
+    expected: |
+      r0=99
+      r1=5
+      r2=0
+      r3=9
+      r4=5
+      r5=0
+      r6=0
+      r7=0

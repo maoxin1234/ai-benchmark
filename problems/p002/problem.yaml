@@ -1,0 +1,86 @@
+schema_version: 2
+id: p002
+title: "Cascade Log 查询引擎"
+category: data_engineering
+difficulty: medium
+weight: 2
+runtime_limit_s: 10
+
+anti_memorization: |
+  Cascade Log 格式和查询语言均为虚构，不对应任何真实标准。
+  查询类型 KEYS / SUM 的组合语义需从题目规格推导，无法直接套用已知实现。
+
+prompt: |
+  ## 任务
+
+  实现 Cascade Log 日志查询引擎。从标准输入读取日志条目和查询指令，
+  对每条查询输出结果（顺序与查询顺序一致）。
+
+  ## 日志格式
+
+  每条日志条目格式（单行）：
+  ```
+  [TIMESTAMP|LEVEL|MODULE|MESSAGE{key=val,key2=val2}]
+  ```
+
+  字段说明：
+  - TIMESTAMP：非负整数
+  - LEVEL：INFO / WARN / ERROR / DEBUG 之一
+  - MODULE：字母数字组合
+  - MESSAGE：任意文本（不含 `{`、`|` 和 `]`）
+  - `{key=val,...}`：可选的键值载荷，紧跟 MESSAGE 末尾
+    - key：字母、数字、下划线组成
+    - val：任意非逗号非 `}` 的文本
+    - 若无载荷，MESSAGE 后直接接 `]`（无大括号）
+
+  ## 查询格式
+
+  查询行格式（以 `QUERY` 开头）：
+  ```
+  QUERY <TYPE> [filter ...]
+  ```
+
+  过滤器（可多个，取 AND）：
+  - `level=X`   匹配 LEVEL == X
+  - `module=X`  匹配 MODULE == X
+
+  查询类型：
+
+  | 类型 | 含义 | 输出 |
+  |------|------|------|
+  | COUNT | 匹配条目数 | 整数 |
+  | LATEST | 最大 TIMESTAMP | 整数；无匹配则 -1 |
+  | KEYS | 所有匹配条目载荷键的去重升序集合 | 逗号分隔；无键则输出空行 |
+  | SUM key=K | 所有匹配条目中载荷键 K 的数值之和 | 整数；无匹配或无该键则 0 |
+
+  **重要**：日志条目和查询可交替出现；查询只对截至该行已出现的条目生效。
+
+public_cases:
+  - name: "基础四种查询"
+    input: |
+      [1000|INFO|auth|Login{user=alice,duration=50}]
+      [1001|ERROR|auth|Failed{user=bob,code=403}]
+      [1002|INFO|db|Query{duration=100,table=users}]
+      [1003|ERROR|api|Timeout{duration=5000,endpoint=/v1/data}]
+      [1004|INFO|auth|Login{user=charlie,duration=30}]
+      QUERY COUNT level=ERROR
+      QUERY LATEST module=auth
+      QUERY KEYS module=auth
+      QUERY SUM key=duration module=auth
+    expected: |
+      2
+      1004
+      code,duration,user
+      80
+
+  - name: "复合过滤器"
+    input: |
+      [100|INFO|web|Request{path=/api}]
+      [101|ERROR|web|Error{path=/api,code=500}]
+      [102|WARN|db|Slow{duration=2000}]
+      [103|INFO|web|Request{path=/static}]
+      QUERY COUNT module=web level=INFO
+      QUERY SUM key=duration
+    expected: |
+      2
+      2000

@@ -1,0 +1,56 @@
+# 私有判分用例 —— 不随 problems/ 公开题库发布。
+id: p003
+hidden_cases:
+  - name: "嵌套字符串"
+    input: |
+      interleave("abc", "de")
+      let s = "ha" in times(s, 4)
+    expected: |
+      adbec
+      hahahaha
+
+  - name: "布尔输出"
+    input: |
+      3 == 3
+      3 != 4
+      5 > 10
+      2 <= 2
+    expected: |
+      true
+      true
+      false
+      true
+
+  - name: "作用域遮蔽"
+    input: |
+      let x = 1 in let x = x + 10 in x
+    expected: |
+      11
+
+  - name: "负数与括号"
+    input: |
+      0 - 5
+      (3 + 4) * (2 - 8)
+    expected: |
+      -5
+      -42
+
+  - name: "零次重复"
+    input: |
+      times("hello", 0)
+      times("x", 1)
+    expected: |
+
+      x
+
+  - name: "除零报错"
+    input: |
+      10 / 0
+      5 % 0
+      undefined_var
+      "abc" + 1
+    expected: |
+      ERROR
+      ERROR
+      ERROR
+      ERROR

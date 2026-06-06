@@ -1,0 +1,31 @@
+name: benchmark-ci
+
+# 防止题库 / 评测器回退：每次 push & PR 自动校验。
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+
+      - name: 题库 schema 校验
+        run: python eval/schema.py
+
+      - name: 评测器自测（含沙箱反向验证）
+        run: python eval/selftest.py
+
+      - name: 参考答案回归（确保题目 expected 与参考实现一致）
+        run: |
+          python submit.py p001 reference/p001/solution.py
+          python submit.py p002 reference/p002/solution.py
+          python submit.py p003 reference/p003/solution.py
+
+      - name: 参数化防背题抽检
+        run: python gen_eval.py p001 reference/p001/solution.py --seed 1 --n 30

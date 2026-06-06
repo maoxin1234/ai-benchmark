@@ -1,0 +1,12 @@
+# 评测产物
+*_result.json
+leaderboard.md
+leaderboard.json
+PWNED_BY_SOLUTION.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# 注意：private-tests/ 应作为独立私有仓库管理。
+# 若公开本仓库作为题库，请在发布前移除或用 submodule 隔离 private-tests/。
