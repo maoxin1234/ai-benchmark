@@ -118,7 +118,9 @@ def run_once(argv: list[str], stdin: str, timeout: int = DEFAULT_TIMEOUT,
             timeout=timeout,
             cwd=workdir,
             env=_minimal_env(),
-            preexec_fn=_posix_limits(mem_mb, timeout) if os.name == "posix" else None,
+            # CPU 上限设为墙钟超时 +2s，确保墙钟超时优先触发，使失控进程在各平台
+            # 统一表现为 __TIMEOUT__，而非在 POSIX 上被 SIGXCPU 提前杀死（returncode<0）。
+            preexec_fn=_posix_limits(mem_mb, timeout + 2) if os.name == "posix" else None,
         )
         out = r.stdout[:OUTPUT_CAP].decode("utf-8", errors="replace")
         err = r.stderr[:4096].decode("utf-8", errors="replace")
